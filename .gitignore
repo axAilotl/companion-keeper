@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.env
+*.egg-info/
+
+# Config (generated at runtime)
+config/llm_presets.json
+config/llm_model_cache.json
+config/llm_model_meta_cache.json
+config/ui_state.json
+
+# Pipeline outputs
+outputs/
+imports/
+model_exports/
+datasets/
+
+# Export artifacts (user data)
+conversations.json
+*.zip

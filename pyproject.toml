@@ -1,0 +1,15 @@
+[project]
+name = "companion-keeper"
+version = "0.3.0"
+description = "Extract, reconstruct, and preserve AI companion personalities from chat exports into Character Card V3 persona cards and lorebooks."
+requires-python = ">=3.11"
+dependencies = [
+  "gradio>=5.0.0",
+  "requests>=2.31.0",
+]
+
+[project.scripts]
+toolkit = "toolkit.cli:main"
+
+[tool.uv]
+package = false
