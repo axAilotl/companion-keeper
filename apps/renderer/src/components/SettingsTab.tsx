@@ -88,8 +88,6 @@ export const SettingsTab = (): JSX.Element => {
   const modelWindowHint = settings.llmModel.trim()
     ? providerModelWindows[settings.llmModel.trim()]
     : undefined;
-  const derivedMaxMemories = Math.max(1, settings.recoverMaxConversations * 2);
-
   return (
     <section className="panel panel--section">
       <header className="panel__header">
@@ -149,13 +147,18 @@ export const SettingsTab = (): JSX.Element => {
               />
             </label>
             <label className="field-block">
-              <span>Max memories (auto)</span>
+              <span>Max memories</span>
               <input
                 type="number"
                 min={1}
                 step={1}
-                value={derivedMaxMemories}
-                readOnly
+                value={settings.maxMemories}
+                onChange={(event) =>
+                  setSettingsField(
+                    "maxMemories",
+                    readInt(event.target.value, settings.maxMemories, 1),
+                  )
+                }
               />
             </label>
             <label className="field-block">

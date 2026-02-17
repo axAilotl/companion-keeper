@@ -72,6 +72,7 @@ export interface RendererSettings {
   defaultModelSlug: string;
   recentOutputDirs: string[];
   recoverMaxConversations: number;
+  maxMemories: number;
   personaName: string;
   userName: string;
   hardcodeNames: boolean;
@@ -220,6 +221,7 @@ const defaultSettings: RendererSettings = {
   defaultModelSlug: "gpt-4o",
   recentOutputDirs: [],
   recoverMaxConversations: 25,
+  maxMemories: 50,
   personaName: "Companion",
   userName: "User",
   hardcodeNames: false,
@@ -426,6 +428,7 @@ function readSettings(): RendererSettings {
       apiKey?: string;
       defaultModelSlug?: string;
       recoverMaxConversations?: number;
+      maxMemories?: number;
       fidelityModelsCsv?: string;
     };
 
@@ -446,6 +449,16 @@ function readSettings(): RendererSettings {
           ? parsed.recoverMaxConversations
           : defaultSettings.recoverMaxConversations,
         defaultSettings.recoverMaxConversations,
+      ),
+      maxMemories: clampPositiveInt(
+        typeof parsed.maxMemories === "number"
+          ? parsed.maxMemories
+          : (
+              typeof parsed.recoverMaxConversations === "number"
+                ? Math.max(1, Math.floor(parsed.recoverMaxConversations * 2))
+                : defaultSettings.maxMemories
+            ),
+        defaultSettings.maxMemories,
       ),
       personaName:
         typeof parsed.personaName === "string" && parsed.personaName.trim().length > 0
@@ -989,7 +1002,7 @@ export const useRendererStore = create<RendererState>((set, get) => ({
       llmApiKey: settings.llmApiKey,
       temperature: settings.temperature,
       requestTimeout: settings.requestTimeout,
-      maxMemories: Math.max(1, settings.recoverMaxConversations * 2),
+      maxMemories: settings.maxMemories,
       memoryPerChatMax: settings.memoryPerChatMax,
       maxParallelCalls: settings.maxParallelCalls,
       maxMessagesPerConversation: settings.maxMessagesPerConversation,
@@ -1143,7 +1156,7 @@ export const useRendererStore = create<RendererState>((set, get) => ({
       llmApiKey: settings.llmApiKey,
       temperature: settings.temperature,
       requestTimeout: settings.requestTimeout,
-      maxMemories: Math.max(1, settings.recoverMaxConversations * 2),
+      maxMemories: settings.maxMemories,
       memoryPerChatMax: settings.memoryPerChatMax,
       maxParallelCalls: settings.maxParallelCalls,
       maxMessagesPerConversation: settings.maxMessagesPerConversation,

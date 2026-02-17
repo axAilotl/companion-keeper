@@ -198,6 +198,7 @@ const resetStoreForTests = (): void => {
       defaultModelSlug: "gpt-4o",
       recentOutputDirs: ["/tmp/test-output", TEST_OUTPUT_DIR],
       recoverMaxConversations: 25,
+      maxMemories: 50,
       personaName: "Companion",
       userName: "User",
       hardcodeNames: false,
