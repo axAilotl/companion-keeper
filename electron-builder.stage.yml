@@ -1,0 +1,19 @@
+appId: com.gptdataexport.desktop
+productName: GPTDataExport Desktop
+electronVersion: 35.7.5
+asar: true
+npmRebuild: false
+directories:
+  app: .electron-app
+  output: release
+files:
+  - "**/*"
+  - "!**/*.map"
+  - "!**/*.d.ts"
+win:
+  target:
+    - target: portable
+      arch:
+        - x64
+  signAndEditExecutable: false
+  artifactName: ${productName}-${version}-${arch}.${ext}

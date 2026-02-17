@@ -1,0 +1,16 @@
+[project]
+name = "companion-preservation-toolkit"
+version = "0.2.0"
+description = "OpenAI export to dataset + CCv3 + lorebook + fidelity benchmark tooling"
+requires-python = ">=3.11"
+dependencies = [
+  "gradio>=5.0.0",
+  "requests>=2.31.0",
+  "Pillow>=10.0.0",
+]
+
+[project.scripts]
+toolkit = "toolkit.cli:main"
+
+[tool.uv]
+package = false

@@ -1,0 +1,23 @@
+{
+  "name": "gptdataexport-workspace",
+  "private": true,
+  "version": "0.1.7",
+  "packageManager": "pnpm@9.14.2",
+  "scripts": {
+    "dev": "concurrently -k -n RENDERER,DESKTOP \"pnpm dev:renderer\" \"pnpm dev:desktop\"",
+    "dev:renderer": "pnpm --filter @gptdataexport/renderer dev",
+    "dev:desktop": "node ./scripts/dev-desktop.cjs",
+    "version:bump:desktop": "node ./scripts/bump-desktop-version.cjs",
+    "package:win": "pnpm run version:bump:desktop && pnpm build && node ./scripts/prepare-electron-stage.cjs && pnpm exec electron-builder --config electron-builder.stage.yml --publish never --win portable --x64",
+    "package:win:dir": "pnpm run version:bump:desktop && pnpm build && node ./scripts/prepare-electron-stage.cjs && pnpm exec electron-builder --config electron-builder.stage.yml --publish never --win --dir --x64",
+    "typecheck": "pnpm --filter @gptdataexport/shared build && turbo run typecheck",
+    "test": "turbo run test",
+    "build": "turbo run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "electron-builder": "^25.1.8",
+    "turbo": "^2.4.0",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,24 +1,46 @@
-# Python
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python legacy
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
 venv/
-.env
-*.egg-info/
+archive/python-legacy/.venv/
 
-# Config (generated at runtime)
-config/llm_presets.json
-config/llm_model_cache.json
-config/llm_model_meta_cache.json
-config/ui_state.json
+# Local runtime state
+config/
 
-# Pipeline outputs
+# Local pipeline outputs
 outputs/
 imports/
+
+# Large export artifacts and generated corpora
+conversations.json
+chat.html
+oai_export_*.zip
+antrhopic_data-*/
 model_exports/
 datasets/
 
-# Export artifacts (user data)
-conversations.json
-*.zip
+# Node / Electron
+node_modules/
+.pnpm-store/
+.turbo/
+*.tsbuildinfo
+apps/desktop/dist/
+apps/renderer/dist/
+apps/*/node_modules/
+packages/*/node_modules/
+packages/shared/dist/
+packages/pipeline/dist/
+release/
+.electron-app/
+
+# Local archive buckets (kept out of Git)
+archive/local-data/
+archive/references/
+archive/misc/

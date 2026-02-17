@@ -1,0 +1,31 @@
+{
+  "name": "@gptdataexport/pipeline",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "gptdata-pipeline": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test --import tsx ./test/**/*.test.ts",
+    "smoke:list-models": "tsx src/cli.ts --list-models --input ../conversations.json"
+  },
+  "dependencies": {
+    "yauzl": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.8",
+    "@types/yauzl": "^2.10.3",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

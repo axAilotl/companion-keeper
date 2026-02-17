@@ -1,0 +1,28 @@
+{
+  "name": "@gptdataexport/desktop",
+  "version": "0.1.7",
+  "private": true,
+  "type": "commonjs",
+  "main": "dist/main.js",
+  "scripts": {
+    "prebuild": "pnpm --filter @gptdataexport/shared build && pnpm --filter @gptdataexport/pipeline build",
+    "build": "tsc -p tsconfig.json",
+    "pretypecheck": "pnpm --filter @gptdataexport/shared build && pnpm --filter @gptdataexport/pipeline build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "predev": "pnpm --filter @gptdataexport/shared build && pnpm --filter @gptdataexport/pipeline build && tsc -p tsconfig.json",
+    "dev": "concurrently -k -n TSC,ELECTRON \"pnpm:dev:tsc\" \"pnpm:dev:electron\"",
+    "dev:tsc": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "dev:electron": "node ./scripts/dev-electron.cjs"
+  },
+  "dependencies": {
+    "@gptdataexport/pipeline": "workspace:*",
+    "@gptdataexport/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "concurrently": "^9.1.2",
+    "electron": "^35.0.0",
+    "nodemon": "^3.1.9",
+    "wait-on": "^8.0.1"
+  }
+}
