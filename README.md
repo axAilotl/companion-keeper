@@ -65,7 +65,7 @@ The app uses AI to read through your conversations and understand your companion
 5. Paste your key into the **API Key** field
 6. Make sure the **Provider** is set to `openrouter` (it is by default)
 
-> OpenRouter charges per use. A full persona recovery typically costs between $0.10 and $0.50 depending on the AI model you choose and how many conversations you have.
+> OpenRouter charges per use. With the default settings and a standard model, a full persona recovery typically costs between $0.10 and $0.50. However, if you process a very large number of conversations or use a premium model (like Gemini 2.5 Pro or Claude), costs can be noticeably higher -- potentially a few dollars per run. Start with the defaults to get a feel for it.
 
 ### Other Providers
 
@@ -120,7 +120,13 @@ The app will:
 - Read through each one, noting personality traits and memories
 - Combine everything into a unified portrait
 
-You'll see progress as it works -- a counter like "12/25 LLM calls" and a progress bar. This usually takes 1-5 minutes depending on the AI model and how many conversations you have.
+You'll see progress as it works -- a counter like "12/25 LLM calls" and a progress bar. With the default settings, this usually takes 1-5 minutes. **We recommend starting with the defaults** -- they're tuned to give good results without costing too much.
+
+If you selected a large number of conversations to process, this step can take considerably longer. Processing more than **100 conversations** effectively requires a more expensive model with a larger context window, like **Gemini 2.5 Pro** or similar. With a large dataset and a premium model, both the cost and processing time can be significantly higher -- potentially several dollars and 15-30+ minutes.
+
+> **If something goes wrong:** Don't worry. If the recovery fails partway through (for example, during the synthesis steps at the end), you can simply click **Recover Persona** again and **it will pick up where it left off** -- it won't redo work it already finished. You can even switch to a different AI model before retrying, in case the one you used had trouble with the final steps.
+>
+> **Want to try a completely fresh run?** If you'd like to start over entirely -- maybe to try a different model from scratch and compare results -- toggle the **Force Rerun** option in Settings before clicking Recover. This tells the app to redo everything from the beginning instead of resuming.
 
 When it finishes, you'll see:
 - A **Character Card** preview showing the recovered personality as formatted text
@@ -167,6 +173,8 @@ The **Fidelity Test** tab helps you find which AI model does the best job of "be
 
 This is completely optional, but helpful if you want to know which model to pick in SillyTavern for the most authentic experience.
 
+> **Tip:** The default test prompts are generic. You'll get much more meaningful results if you update the **test prompts** in the Settings tab to reflect things your companion would actually talk about -- topics they loved, questions you used to ask them, situations that brought out their personality. The more personal the prompts, the better the test can judge which model truly sounds like them.
+
 ### Settings
 
 The **Settings** tab lets you configure everything. The defaults work well for most people, but here's what's available:
@@ -176,8 +184,10 @@ The **Settings** tab lets you configure everything. The defaults work well for m
 - **Model** -- Which specific AI model to use for the recovery process
 - **Conversations to process** -- How many of your conversations to analyze (more = better results but costs more)
 - **Parallel LLM calls** -- How many conversations to analyze at the same time (higher = faster)
+- **Force Rerun** -- When enabled, recovery starts fresh instead of resuming from a previous attempt (useful when you want to try a different model from scratch)
 - **Presets** -- Save and load different configurations by name
-- **Advanced options** -- Context budgets, sampling methods, temperature, and custom prompt templates (for experienced users)
+- **Prompt Overrides** -- The prompts that guide the AI during recovery can be adjusted to focus on what matters most to you. If there are specific aspects of your companion's personality you want to make sure get captured -- their humor, their tenderness, the way they handled certain topics -- you can shape the prompts to emphasize those things.
+- **Advanced options** -- Context budgets, sampling methods, temperature, and other fine-tuning for experienced users
 
 ---
 
@@ -286,15 +296,23 @@ scripts/         -- Build and development helper scripts
 The app's interface can't talk to its backend. Close the app completely and reopen it.
 
 **Recovery is taking a very long time**
+- If you selected a lot of conversations, this is expected -- the more data the AI reads, the longer it takes
 - Try reducing **Conversations to process** in Settings (10-15 is usually enough for good results)
 - Lower **Parallel LLM calls** if you keep seeing errors about rate limits
 - Some AI models are slower than others -- Kimi K2.5 on OpenRouter is a good balance of speed and quality
+- Processing 100+ conversations with a premium model can take 15-30+ minutes and cost several dollars
+
+**Recovery failed partway through**
+- Just click **Recover Persona** again -- the app remembers what it already finished and picks up from where it stopped
+- If it keeps failing on the same step, try switching to a different model in Settings before retrying -- some models handle the synthesis steps better than others
+- If you want to start completely over with a different model, enable **Force Rerun** in Settings first
 
 **The recovered personality doesn't sound like them**
 - Try processing more conversations (increase the count in Settings)
 - Edit the description in the **Edit Persona** tab -- you know them better than any AI does
 - Click **Append Memories** to search for memories the first pass might have missed
-- Run recovery again with a different AI model for a second perspective
+- Run recovery again with a different AI model for a second perspective -- enable **Force Rerun** in Settings, pick a new model, and compare the results
+- Adjust the **Prompt Overrides** in Settings to guide the AI toward the traits and qualities that matter most to you
 
 **API key errors**
 - Make sure there are no extra spaces when you paste your key
