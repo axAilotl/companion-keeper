@@ -26,6 +26,7 @@ export interface ProviderModelsResult {
 
 interface RequestOptions {
   signal?: AbortSignal;
+  requestTag?: string;
   onRetry?: (event: {
     url: string;
     attempt: number;
@@ -100,6 +101,22 @@ function truncateBody(text: string, max = 800): string {
   return `${text.slice(0, max)}...`;
 }
 
+function requestBodyBytes(body: RequestInit["body"]): number {
+  if (!body) {
+    return 0;
+  }
+  if (typeof body === "string") {
+    return Buffer.byteLength(body, "utf8");
+  }
+  if (body instanceof Uint8Array) {
+    return body.byteLength;
+  }
+  if (body instanceof ArrayBuffer) {
+    return body.byteLength;
+  }
+  return 0;
+}
+
 async function fetchJson(
   url: string,
   init: RequestInit,
@@ -108,9 +125,15 @@ async function fetchJson(
 ): Promise<unknown> {
   const controller = new AbortController();
   const timeoutMs = Math.max(1, timeoutSeconds) * 1000;
-  const timer = globalThis.setTimeout(() => controller.abort(), timeoutMs);
+  let timeoutTriggered = false;
+  let upstreamAbortTriggered = false;
+  const timer = globalThis.setTimeout(() => {
+    timeoutTriggered = true;
+    controller.abort();
+  }, timeoutMs);
   const upstreamSignal = options?.signal;
   const handleUpstreamAbort = (): void => {
+    upstreamAbortTriggered = true;
     controller.abort();
   };
 
@@ -123,10 +146,29 @@ async function fetchJson(
   }
 
   try {
-    const response = await fetch(url, {
-      ...init,
-      signal: controller.signal,
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...init,
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (timeoutTriggered) {
+        const timeoutError = new Error(
+          `Request timed out after ${timeoutSeconds}s${options?.requestTag ? ` [${options.requestTag}]` : ""} | url=${url} | payload_bytes=${requestBodyBytes(init.body)}`,
+        );
+        timeoutError.name = "TimeoutError";
+        throw timeoutError;
+      }
+      if (upstreamAbortTriggered || upstreamSignal?.aborted) {
+        const abortError = new Error(
+          `Request aborted by upstream signal${options?.requestTag ? ` [${options.requestTag}]` : ""} | url=${url}`,
+        );
+        abortError.name = "AbortError";
+        throw abortError;
+      }
+      throw error;
+    }
 
     if (!response.ok) {
       const body = truncateBody(await response.text());
@@ -161,6 +203,9 @@ async function fetchJsonWithRetry(
       return await fetchJson(url, init, timeoutSeconds, options);
     } catch (error) {
       if (options?.signal?.aborted || (error instanceof Error && error.name === "AbortError")) {
+        throw error;
+      }
+      if (error instanceof Error && error.name === "TimeoutError") {
         throw error;
       }
       if (attempt >= maxAttempts || !isRetryableError(error)) {

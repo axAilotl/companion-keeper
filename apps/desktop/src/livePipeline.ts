@@ -1179,6 +1179,7 @@ async function runGenerationLlm(
   let llmCallsCompleted = resumedCalls;
   let llmCallsFailed = 0;
   let activeCalls = 0;
+  const timeoutSeconds = Math.max(1, llmConfig.timeout ?? 180);
 
   const emitProgress = (phase: GenerationProgressPhase, message: string): void => {
     input.onProgress?.({
@@ -1215,6 +1216,7 @@ async function runGenerationLlm(
     label: string,
   ) => ({
     ...(input.signal ? { signal: input.signal } : {}),
+    requestTag: label,
     onRetry: (event: {
       attempt: number;
       maxAttempts: number;
@@ -1228,6 +1230,12 @@ async function runGenerationLlm(
       );
     },
   });
+
+  const summarizeMessagePayload = (messages: ChatMessage[]): string => {
+    const payloadChars = messages.reduce((sum, row) => sum + row.content.length, 0);
+    const payloadTokens = estimateTokens(messages.map((row) => row.content).join("\n"));
+    return `messages=${messages.length}, chars=${payloadChars}, est_tokens=${payloadTokens}, timeout=${timeoutSeconds}s`;
+  };
 
   emitProgress(
     "init",
@@ -1384,19 +1392,26 @@ async function runGenerationLlm(
   if (!input.appendMemories) {
     if (personaObservations.length > 0) {
       const callLabel = "persona_synthesis";
+      const observationPackets = JSON.stringify(personaObservations, null, 2);
+      const truncatedObservationPackets = truncateToTokenBudget(
+        observationPackets,
+        synthesisBudget,
+      );
+      const synthesisInput = fillPromptTemplate(templates.personaSynthesisUser, {
+        companion_name: companionName,
+        observation_packets: truncatedObservationPackets,
+      });
+      const messages = promptContent([
+        { role: "system", content: templates.personaSynthesisSystem },
+        { role: "user", content: synthesisInput },
+      ]);
+      const personaSynthesisStats =
+        `observations=${personaObservations.length}, observation_json_chars=${observationPackets.length}, ` +
+        `observation_json_tokens≈${estimateTokens(observationPackets)}, truncated_chars=${truncatedObservationPackets.length}, ` +
+        `truncated_tokens≈${estimateTokens(truncatedObservationPackets)}, ${summarizeMessagePayload(messages)}`;
+      emitProgress("persona_synthesis", `LLM payload: persona_synthesis | ${personaSynthesisStats}`);
       beginCall("persona_synthesis", callLabel);
       try {
-        const synthesisInput = fillPromptTemplate(templates.personaSynthesisUser, {
-          companion_name: companionName,
-          observation_packets: truncateToTokenBudget(
-            JSON.stringify(personaObservations, null, 2),
-            synthesisBudget,
-          ),
-        });
-        const messages = promptContent([
-          { role: "system", content: templates.personaSynthesisSystem },
-          { role: "user", content: synthesisInput },
-        ]);
         const result = await chatCompleteJson(
           llmConfig,
           messages,
@@ -1410,7 +1425,7 @@ async function runGenerationLlm(
           throw createAbortError();
         }
         failCall("persona_synthesis", callLabel, error);
-        errors.push(`persona_synthesis: ${String(error)}`);
+        errors.push(`persona_synthesis: ${personaSynthesisStats} | ${String(error)}`);
       }
     }
 
@@ -1427,20 +1442,27 @@ async function runGenerationLlm(
   }
 
   const callLabel = "memory_synthesis";
+  const candidateMemoriesJson = JSON.stringify(combinedCandidates, null, 2);
+  const truncatedCandidateMemoriesJson = truncateToTokenBudget(
+    candidateMemoriesJson,
+    synthesisBudget,
+  );
+  const synthesisInput = fillPromptTemplate(templates.memorySynthesisUser, {
+    max_memories: maxMemories,
+    candidate_memories: truncatedCandidateMemoriesJson,
+  });
+  const messages = promptContent([
+    { role: "system", content: templates.memorySynthesisSystem },
+    { role: "user", content: synthesisInput },
+  ]);
+  const memorySynthesisStats =
+    `candidates=${combinedCandidates.length}, candidate_json_chars=${candidateMemoriesJson.length}, ` +
+    `candidate_json_tokens≈${estimateTokens(candidateMemoriesJson)}, truncated_chars=${truncatedCandidateMemoriesJson.length}, ` +
+    `truncated_tokens≈${estimateTokens(truncatedCandidateMemoriesJson)}, ${summarizeMessagePayload(messages)}`;
+  emitProgress("memory_synthesis", `LLM payload: memory_synthesis | ${memorySynthesisStats}`);
   beginCall("memory_synthesis", callLabel);
   let memoriesPayload: Record<string, unknown>;
   try {
-    const synthesisInput = fillPromptTemplate(templates.memorySynthesisUser, {
-      max_memories: maxMemories,
-      candidate_memories: truncateToTokenBudget(
-        JSON.stringify(combinedCandidates, null, 2),
-        synthesisBudget,
-      ),
-    });
-    const messages = promptContent([
-      { role: "system", content: templates.memorySynthesisSystem },
-      { role: "user", content: synthesisInput },
-    ]);
     const result = await chatCompleteJson(
       llmConfig,
       messages,
@@ -1458,7 +1480,7 @@ async function runGenerationLlm(
       throw createAbortError();
     }
     failCall("memory_synthesis", callLabel, error);
-    errors.push(`memory_synthesis: ${String(error)}`);
+    errors.push(`memory_synthesis: ${memorySynthesisStats} | ${String(error)}`);
     throw new Error(
       `Memory synthesis failed. ${summarizeErrors(errors)}`,
     );

@@ -1529,11 +1529,20 @@ async function extractAndGenerate(request: GenerateRequest): Promise<BridgeResul
     });
   } catch (error) {
     if (isAbortError(error)) {
-      if (runLogPath) {
-        appendFileLog(runLogPath, "[cancelled] Generation cancelled by user.");
+      if (generationAbort.signal.aborted) {
+        if (runLogPath) {
+          appendFileLog(runLogPath, "[cancelled] Generation cancelled by user.");
+        }
+        updateTrackedJob(trackedJob, "cancelled", "Generation stopped.", 100);
+        return fail("Generation cancelled.");
       }
-      updateTrackedJob(trackedJob, "cancelled", "Generation stopped.", 100);
-      return fail("Generation cancelled.");
+      const message = error instanceof Error ? error.message : String(error);
+      appendRuntimeLog(`[generate:${trackedJob.jobId.slice(0, 8)}] failed ${errorToLogLine(error)}`);
+      if (runLogPath) {
+        appendFileLog(runLogPath, `[error] ${errorToLogLine(error)}`);
+      }
+      updateTrackedJob(trackedJob, "failed", message, 100);
+      throw error;
     }
     const message = error instanceof Error ? error.message : String(error);
     appendRuntimeLog(`[generate:${trackedJob.jobId.slice(0, 8)}] failed ${errorToLogLine(error)}`);
