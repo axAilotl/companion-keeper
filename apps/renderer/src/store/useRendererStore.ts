@@ -72,6 +72,9 @@ export interface RendererSettings {
   defaultModelSlug: string;
   recentOutputDirs: string[];
   recoverMaxConversations: number;
+  personaName: string;
+  userName: string;
+  hardcodeNames: boolean;
   forceRerun: boolean;
   contextProfile: ContextProfile;
   conversationSampling: "weighted-random" | "random-uniform" | "top";
@@ -217,6 +220,9 @@ const defaultSettings: RendererSettings = {
   defaultModelSlug: "gpt-4o",
   recentOutputDirs: [],
   recoverMaxConversations: 25,
+  personaName: "Companion",
+  userName: "User",
+  hardcodeNames: false,
   forceRerun: false,
   contextProfile: "auto",
   conversationSampling: "weighted-random",
@@ -441,6 +447,15 @@ function readSettings(): RendererSettings {
           : defaultSettings.recoverMaxConversations,
         defaultSettings.recoverMaxConversations,
       ),
+      personaName:
+        typeof parsed.personaName === "string" && parsed.personaName.trim().length > 0
+          ? parsed.personaName
+          : defaultSettings.personaName,
+      userName:
+        typeof parsed.userName === "string" && parsed.userName.trim().length > 0
+          ? parsed.userName
+          : defaultSettings.userName,
+      hardcodeNames: parsed.hardcodeNames === true,
       forceRerun: parsed.forceRerun === true,
       contextProfile: toContextProfile(parsed.contextProfile),
       conversationSampling:
@@ -694,9 +709,9 @@ export const useRendererStore = create<RendererState>((set, get) => ({
   selectedModel: "",
   outputDir: initialSettings.recentOutputDirs[0] ?? "",
   report: "",
-  personaName: "Companion",
-  userName: "User",
-  hardcodeNames: false,
+  personaName: initialSettings.personaName,
+  userName: initialSettings.userName,
+  hardcodeNames: initialSettings.hardcodeNames,
   personaImagePath: "",
   personaImagePreviewDataUrl: "",
   card: emptyCard(),
@@ -1593,6 +1608,9 @@ export const useRendererStore = create<RendererState>((set, get) => ({
 
     set((state) => ({
       settings: nextSettings,
+      personaName: nextSettings.personaName,
+      userName: nextSettings.userName,
+      hardcodeNames: nextSettings.hardcodeNames,
       outputDir:
         state.outputDir.trim().length > 0
           ? state.outputDir
@@ -1609,17 +1627,48 @@ export const useRendererStore = create<RendererState>((set, get) => ({
   },
 
   setPersonaName: (value) => {
-    set({ personaName: value });
+    set((state) => {
+      const nextSettings: RendererSettings = {
+        ...state.settings,
+        personaName: value,
+      };
+      writeSettings(nextSettings);
+      void persistSettingsToDesktop(nextSettings);
+      return {
+        personaName: value,
+        settings: nextSettings,
+      };
+    });
   },
 
   setUserName: (value) => {
-    set({ userName: value });
+    set((state) => {
+      const nextSettings: RendererSettings = {
+        ...state.settings,
+        userName: value,
+      };
+      writeSettings(nextSettings);
+      void persistSettingsToDesktop(nextSettings);
+      return {
+        userName: value,
+        settings: nextSettings,
+      };
+    });
   },
 
   setHardcodeNames: (value) => {
     set((state) => {
+      const nextSettings: RendererSettings = {
+        ...state.settings,
+        hardcodeNames: value,
+      };
+      writeSettings(nextSettings);
+      void persistSettingsToDesktop(nextSettings);
       if (!value) {
-        return { hardcodeNames: false };
+        return {
+          hardcodeNames: false,
+          settings: nextSettings,
+        };
       }
       const output = applyOutputNamePolicy(state.card, state.memories, {
         hardcodeNames: true,
@@ -1628,6 +1677,7 @@ export const useRendererStore = create<RendererState>((set, get) => ({
       });
       return {
         hardcodeNames: true,
+        settings: nextSettings,
         card: output.card,
         memories: output.memories,
       };
