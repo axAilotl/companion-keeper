@@ -300,6 +300,7 @@ export const generateRequestSchema = z
     memorySampleConversations: z.number().int().nonnegative().optional(),
     outputDir: z.string().min(1).optional(),
     appendMemories: z.boolean().optional(),
+    forceRerun: z.boolean().optional(),
     llmProvider: z.enum(["ollama", "openai", "openrouter", "anthropic"]).optional(),
     llmBaseUrl: z.string().optional(),
     llmModel: z.string().optional(),

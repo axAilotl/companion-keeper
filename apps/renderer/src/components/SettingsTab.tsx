@@ -191,6 +191,15 @@ export const SettingsTab = (): JSX.Element => {
             <details className="settings-accordion">
               <summary>Advanced Recovery Settings</summary>
               <div className="editor-grid">
+                <label className="toggle-field" htmlFor="forceRerun">
+                  <input
+                    id="forceRerun"
+                    type="checkbox"
+                    checked={settings.forceRerun}
+                    onChange={(event) => setSettingsField("forceRerun", event.target.checked)}
+                  />
+                  <span>Force rerun (ignore checkpoint + scanned cache)</span>
+                </label>
                 <label className="field-block">
                   <span>Sampling mode</span>
                   <select

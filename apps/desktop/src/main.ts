@@ -1419,7 +1419,7 @@ async function extractAndGenerate(request: GenerateRequest): Promise<BridgeResul
     );
     appendFileLog(
       runLogPath,
-      `[input] filePath=${path.resolve(request.filePath)} maxConversations=${request.maxConversations} maxMemories=${request.maxMemories ?? ""} maxMessagesPerConversation=${request.maxMessagesPerConversation ?? ""} maxCharsPerConversation=${request.maxCharsPerConversation ?? ""} maxTotalChars=${request.maxTotalChars ?? ""} requestTimeout=${request.requestTimeout ?? ""}`,
+      `[input] filePath=${path.resolve(request.filePath)} maxConversations=${request.maxConversations} maxMemories=${request.maxMemories ?? ""} maxMessagesPerConversation=${request.maxMessagesPerConversation ?? ""} maxCharsPerConversation=${request.maxCharsPerConversation ?? ""} maxTotalChars=${request.maxTotalChars ?? ""} requestTimeout=${request.requestTimeout ?? ""} forceRerun=${request.forceRerun === true ? "true" : "false"}`,
     );
 
     const cardPath = path.join(runDir, "character_card_v3.json");

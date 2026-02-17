@@ -198,6 +198,7 @@ const resetStoreForTests = (): void => {
       defaultModelSlug: "gpt-4o",
       recentOutputDirs: ["/tmp/test-output", TEST_OUTPUT_DIR],
       recoverMaxConversations: 25,
+      forceRerun: false,
       contextProfile: "auto",
       conversationSampling: "weighted-random",
       memoryPerChatMax: 6,

@@ -998,6 +998,10 @@ function generationSamplingSeed(request: GenerateRequest): number {
   return -1;
 }
 
+function generationForceRerun(request: GenerateRequest): boolean {
+  return (request as Record<string, unknown>).forceRerun === true;
+}
+
 function companionNameFromRequest(request: GenerateRequest): string {
   const value = safeString((request as Record<string, unknown>).companionName, "Companion");
   return value || "Companion";
@@ -1052,10 +1056,10 @@ async function runGenerationLlm(
     ? input.request.modelContextWindow
     : inferContextWindow(llmConfig.model);
   const usableContext = Math.max(2048, contextWindow - 2500);
-  const perChatCap = contextWindow > 300_000 ? 32_000 : contextWindow > 150_000 ? 24_000 : 12_000;
-  const perChatBudget = Math.max(900, Math.min(Math.floor(usableContext * 0.75), perChatCap));
-  const synthesisBudget = Math.max(1200, Math.min(Math.floor(usableContext * 0.85), perChatCap + 6000));
+  const perChatBudget = Math.max(900, Math.floor(usableContext * 0.9));
+  const synthesisBudget = Math.max(1200, Math.floor(usableContext * 0.9));
   const companionName = companionNameFromRequest(input.request);
+  const forceRerun = generationForceRerun(input.request);
   const maxParallel = Math.max(1, Math.min(input.request.maxParallelCalls ?? 4, 16));
   const maxMemories = Math.max(1, input.request.maxMemories ?? 24);
   const memoryPerChatMax = Math.max(1, input.request.memoryPerChatMax ?? 6);
@@ -1075,7 +1079,9 @@ async function runGenerationLlm(
     samplingMode,
     effectiveSamplingSeed,
   );
-  const checkpoint = await readResumeCheckpoint(checkpointPath, checkpointSignature);
+  const checkpoint = forceRerun
+    ? normalizeResumeCheckpoint(null, checkpointSignature)
+    : await readResumeCheckpoint(checkpointPath, checkpointSignature);
 
   const preflightCalls = 1;
   const personaObservationCalls = input.appendMemories ? 0 : chunksForPersona.length;
@@ -1239,7 +1245,7 @@ async function runGenerationLlm(
 
   emitProgress(
     "init",
-    `Preparing generation for ${companionName} using ${llmConfig.provider}/${llmConfig.model}. Resuming ${resumedCalls} completed calls from checkpoint.`,
+    `Preparing generation for ${companionName} using ${llmConfig.provider}/${llmConfig.model}. ${forceRerun ? "Force rerun enabled; ignoring previous checkpoint state." : `Resuming ${resumedCalls} completed calls from checkpoint.`}`,
   );
   throwIfAborted(input.signal);
 
@@ -1513,6 +1519,7 @@ async function runGenerationLlm(
     personaPayload,
     memoriesPayload,
     stageStats: {
+      forceRerun,
       contextWindow,
       perChatInputBudgetTokens: perChatBudget,
       synthesisInputBudgetTokens: synthesisBudget,
@@ -1791,6 +1798,10 @@ export async function runGeneration(input: GenerationRunInput): Promise<Generati
   } = input;
   const manifestPath = input.manifestPath || path.join(runDir, "scan_manifest.json");
   const manifest = await readManifest(manifestPath, modelDir);
+  const forceRerun = generationForceRerun(request);
+  if (forceRerun && Object.keys(manifest.scannedFiles).length > 0) {
+    manifest.scannedFiles = {};
+  }
   const companionName = companionNameFromRequest(request);
   const samplingMode = generationSamplingMode(request);
   const requestedSamplingSeed = generationSamplingSeed(request);
@@ -1846,7 +1857,7 @@ export async function runGeneration(input: GenerationRunInput): Promise<Generati
     ...(input.signal ? { signal: input.signal } : {}),
   });
 
-  const memoryRowsForSelection = appendMemories
+  const memoryRowsForSelection = appendMemories && !forceRerun
     ? selectedMemory.filter((row) => !(row.fileName in manifest.scannedFiles))
     : selectedMemory;
 

@@ -72,6 +72,7 @@ export interface RendererSettings {
   defaultModelSlug: string;
   recentOutputDirs: string[];
   recoverMaxConversations: number;
+  forceRerun: boolean;
   contextProfile: ContextProfile;
   conversationSampling: "weighted-random" | "random-uniform" | "top";
   memoryPerChatMax: number;
@@ -216,6 +217,7 @@ const defaultSettings: RendererSettings = {
   defaultModelSlug: "gpt-4o",
   recentOutputDirs: [],
   recoverMaxConversations: 25,
+  forceRerun: false,
   contextProfile: "auto",
   conversationSampling: "weighted-random",
   memoryPerChatMax: 6,
@@ -439,6 +441,7 @@ function readSettings(): RendererSettings {
           : defaultSettings.recoverMaxConversations,
         defaultSettings.recoverMaxConversations,
       ),
+      forceRerun: parsed.forceRerun === true,
       contextProfile: toContextProfile(parsed.contextProfile),
       conversationSampling:
         parsed.conversationSampling === "random-uniform" || parsed.conversationSampling === "top"
@@ -964,6 +967,7 @@ export const useRendererStore = create<RendererState>((set, get) => ({
       maxConversations: settings.recoverMaxConversations,
       conversationSampling: settings.conversationSampling,
       appendMemories: false,
+      forceRerun: settings.forceRerun,
       llmProvider: settings.llmProvider,
       llmBaseUrl: settings.llmBaseUrl,
       llmModel: settings.llmModel,
@@ -1117,6 +1121,7 @@ export const useRendererStore = create<RendererState>((set, get) => ({
       conversationSampling: settings.conversationSampling,
       outputDir,
       appendMemories: true,
+      forceRerun: settings.forceRerun,
       llmProvider: settings.llmProvider,
       llmBaseUrl: settings.llmBaseUrl,
       llmModel: settings.llmModel,
